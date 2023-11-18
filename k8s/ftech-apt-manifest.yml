@@ -4,20 +4,10 @@ metadata:
   namespace: aptly
   name: ftech-apt-config
 data:
-  nginx.conf: |-
-    http {
-      server {
-        listen        80;
-        server_name   _;
-
-        location / {
-          root /aptly-fs/ftech_public/;
-        }
-      }
-    }
-
-    {
-      "rootDir": "/aptly-fs/root",
+  Caddyfile: |-
+    :80 {
+      root * /aptly-fs/ftech_public
+      file_server browse
     }
 ---
 apiVersion: apps/v1
@@ -41,17 +31,20 @@ spec:
       - name: ftech-apt-config-vol
         configMap:
           name: ftech-apt-config
+          items:
+          - key: "Caddyfile"
+            path: "Caddyfile"
       - name: aptly-storage
         persistentVolumeClaim:
           claimName: aptly-volume
       containers:
       - name: repo
-        image: "nginx:1.25"
+        image: "caddy:2.7.5"
         ports:
         - containerPort: 80
         volumeMounts:
           - name: ftech-apt-config-vol
-            mountPath: nginx.conf
+            mountPath: "/etc/caddy/"
           - name: aptly-storage
             mountPath: "/aptly-fs"
 ---
@@ -82,6 +75,16 @@ spec:
   ingressClassName: caddy
   rules:
   - host: test.cloudunpacked.com
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: ftech-apt-repo
+            port:
+              number: 80
+  - host: pkg.feliciano.tech
     http:
       paths:
       - pathType: Prefix
