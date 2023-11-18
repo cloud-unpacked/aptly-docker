@@ -11,5 +11,7 @@ apt-get update && \
 apt-get install aptly ca-certificates -y && \
 apt-get clean
 
+WORKDIR /aptly-fs
+
 CMD ["aptly", "api", "serve", "-listen=:8080"]
 EXPOSE 8080
