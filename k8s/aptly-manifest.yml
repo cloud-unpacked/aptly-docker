@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: aptly
+  name: aptly-volume
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: aptly
+  name: aptly-config
+data:
+  aptly.conf: |-
+    {
+      "rootDir": "/aptly-fs/root",
+      "downloadConcurrency": 4,
+      "downloadSpeedLimit": 0,
+      "architectures": [],
+      "dependencyFollowSuggests": false,
+      "dependencyFollowRecommends": false,
+      "dependencyFollowAllVariants": false,
+      "dependencyFollowSource": false,
+      "dependencyVerboseResolve": false,
+      "gpgDisableSign": false,
+      "gpgDisableVerify": false,
+      "gpgProvider": "gpg",
+      "downloadSourcePackages": false,
+      "skipLegacyPool": true,
+      "ppaDistributorID": "ubuntu",
+      "ppaCodename": "",
+      "skipContentsPublishing": false,
+      "FileSystemPublishEndpoints": {
+        "ftech": {
+          "rootDir": "/aptly-fs/ftech_public",
+            "linkMethod": "symlink"
+          }
+      },
+      "S3PublishEndpoints": {},
+      "SwiftPublishEndpoints": {}
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: aptly
+  name: aptly-tool
+  labels:
+    app: aptly-tool
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aptly-tool
+  template:
+    metadata:
+      labels:
+        app: aptly-tool
+    spec:
+      volumes:
+      - name: aptly-config-vol
+        configMap:
+          name: aptly-config
+      - name: aptly-storage
+        persistentVolumeClaim:
+          claimName: aptly-volume
+      containers:
+      - name: app
+        image: "ghcr.io/cloud-unpacked/aptly:2"
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+          - name: aptly-config-vol
+            mountPath: /etc/aptly.conf
+            subPath: aptly.conf
+          - name: aptly-storage
+            mountPath: "/aptly-fs"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: aptly
+  name: aptly-tool
+  labels:
+    app: aptly-tool
+spec:
+  type: ClusterIP
+  selector:
+    app: aptly-tool
+  ports:
+    - protocol: TCP
+      name: http
+      port: 80
+      targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: aptly
+  name: aptly-tool
+  labels:
+    app: aptly-tool
+spec:
+  ingressClassName: tailscale
+  defaultBackend:
+    service:
+      name: aptly-tool
+      port:
+        number: 80
+  tls:
+  - hosts:
+    - aptly
