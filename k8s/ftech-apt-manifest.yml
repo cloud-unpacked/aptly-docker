@@ -71,19 +71,15 @@ metadata:
   name: ftech-apt-repo
   labels:
     app: ftech-apt
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-production"
 spec:
-  ingressClassName: caddy
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - pkg.feliciano.tech
+    secretName: ftech-apt-repo-tls
   rules:
-  - host: test.cloudunpacked.com
-    http:
-      paths:
-      - pathType: Prefix
-        path: "/"
-        backend:
-          service:
-            name: ftech-apt-repo
-            port:
-              number: 80
   - host: pkg.feliciano.tech
     http:
       paths:
