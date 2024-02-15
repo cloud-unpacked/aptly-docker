@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 RUN apt-get update && \
-apt-get install gnupg -y && \
+apt-get install -y bzip2 gnupg && \
 apt-get clean
 
 # Instructions from: http://www.aptly.info/download/
