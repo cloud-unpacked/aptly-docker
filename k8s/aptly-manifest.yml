@@ -71,7 +71,7 @@ spec:
           claimName: aptly-volume
       containers:
       - name: app
-        image: "ghcr.io/cloud-unpacked/aptly:2"
+        image: "ghcr.io/cloud-unpacked/aptly:4"
         ports:
         - containerPort: 8080
         volumeMounts:

@@ -13,5 +13,5 @@ apt-get clean
 
 WORKDIR /aptly-fs
 
-CMD ["aptly", "api", "serve", "-listen=:8080"]
+CMD ["aptly", "api", "serve", "-listen=:8080", "-no-lock"]
 EXPOSE 8080
